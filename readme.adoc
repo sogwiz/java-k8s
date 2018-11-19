@@ -9,6 +9,12 @@ We will use a simple Java application built using Spring Boot. The application p
 
 The source code is in the `app` directory.
 
+== Pre-requisites
+* java
+* maven 
+* docker 
+-- Once docker is installed, enable Kubernetes in Docker. Docker -> Preferences -> Kubernetes -> Enable Kubernetes
+
 == Build and Test using Maven
 
 . Run application:
@@ -113,6 +119,46 @@ Kubernetes can be easily enabled on a development machine using Docker for Mac a
 
 	kubectl config use-context docker-for-desktop
 
+. Deploy the application to local Kubernetes cluster
+
+	kubectl create -f greeting-deployment.yaml #creates the deployment of a ReplicaSet to bring up 1 pod
+	kubectl get deployment -o=wide #prints info about deployments
+	kubectl get svc -o=wide #we didn't deploy a service so we won't expect to see anything here other than k8s cluster running
+	kubectl get pods -o=wide #NOTE the existance of the pod that is running
+
+Can you try and access the web endpoint 'hello' using your local web browser using the IP address from the get pods command?
+Can you try and access the web endpoint 'hello' using curl command from your local host?
+Can you try and access the web endpoint 'hello' using curl command from within the pod itself?
+	
+	kubectl exec -it greeting-5dc49d9484-ptpxf -- /bin/bash
+	curl localhost:8080/hello
+
+. Deploy the load balancer service to local Kubernetes cluster to access app via port 80
+	kubectl create -f greeting-service.yaml
+	kubectl get svc -o=wide
+
+Now try accessing localhost via web browser or through curl
+	curl http://$(kubectl get svc/greeting-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'):80/hello
+
+. Stop the container 
+	docker container ls 
+	docker stop 6c8271e1e208 #docker stop <CONTAINER ID>
+	#wait 5-10 seconds
+	docker container ls
+
+What just happened? There's a container that's running again. This is the power of K8S. In our greeting-deployment.yaml, we've defined a ReplicaSet ensuring that 1 replica is always running
+K8S saw that the container was stopped so it started another one for us.
+
+Delete the app deployment and service
+	kubectl delete -f greeting-deployment.yaml
+	docker container ls #what do you notice here?
+	kubectl get svc -o=wide
+	kubectl delete -f greeting-service.yaml
+	kubectl get svc -o=wide #notice any difference here?
+
+Summary: we just used K8S to launch a simple app. We had to manage 2 yaml files for this simple app. What if we have a complex app (or distributed system) that has multiple yaml configuration files to represent system?
+At that point, managing the cluster deployment via K8S may become cumbersome. This is where Helm comes in. Helm will allow us to execute 1 single command to deploy our app.
+
 . Install the Helm CLI:
 +
 	brew install kubernetes-helm
@@ -146,8 +192,10 @@ If Helm has already been initialized on the cluster, then you may have to upgrad
 
 . Access the application:
 
-  	curl http://$(kubectl get svc/myapp-greeting \
-  		-o jsonpath='{.status.loadBalancer.ingress[0].hostname}'):8080/hello
+  	curl http://$(kubectl get svc/myapp-greeting -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'):80/hello
+
+. Optional: Delete the application:
+	helm delete --purge myapp
 
 == Debug Docker and Kubernetes using IntelliJ
 
