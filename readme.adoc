@@ -144,6 +144,7 @@ Kubernetes can be easily enabled on a development machine using Docker for Mac a
 	curl http://$(kubectl get svc/greeting-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'):80/hello
 
 . Stop the container 
+
 	docker container ls 
 	docker stop 6c8271e1e208 #docker stop <CONTAINER ID>
 	#wait 5-10 seconds
