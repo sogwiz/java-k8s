@@ -137,10 +137,12 @@ Kubernetes can be easily enabled on a development machine using Docker for Mac a
 	curl localhost:8080/hello
 
 . Deploy the load balancer service to local Kubernetes cluster to access app via port 80
+
 	kubectl create -f greeting-service.yaml
 	kubectl get svc -o=wide
 
 ..  Now try accessing localhost via web browser or through curl
+
 	curl http://$(kubectl get svc/greeting-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'):80/hello
 
 . Stop the container 
